@@ -316,8 +316,8 @@ function renderWaktu() {
     # rendering general buttons
     echo <<<CHECKBOXWAKTU
     <div id="playlisttitle">
-        <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" onclick="toggleDiv();">
-        <label for="vehicle1"> I have a bike</label><br>
+        <input type="checkbox" id="isP" onclick="toggleDiv();">
+        <label for="isP"> Create schdule for prayer time</label><br>
     </div>
 CHECKBOXWAKTU;
 }
@@ -536,6 +536,44 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" id="viewport" />
 
     <script>
+
+        let events = [];
+
+        // Function to add event
+        function addEvent(eventNameX, eventDateTime) {
+            if(eventNameX && eventDateTime) {
+                events.push({ name: eventNameX, dateTime: new Date(eventDateTime) });
+                //console.log(events);
+            }
+        }
+
+        // Periodically check for upcoming events
+        setInterval(() => {
+            var now = new Date();
+            now -= now % 1000;
+            console.log("now: "+now);
+            //const rangeStartTime = new Date(now.getTime() - (30 * 60 * 1000)); // 3 minutes before now
+            //const rangeEndTime = new Date(now.getTime() + (1 * 60 * 1000)); // 3 minutes after now
+            //console.log("rangeStartTime: "+rangeStartTime);
+            //console.log("rangeEndTime: "+rangeEndTime);
+
+            const upcomingEvents = events.filter(event =>{
+                console.log(event);
+                event.dateTime.getTime() == now
+            });
+
+            if(upcomingEvents.length > 0) {
+                console.log("Upcoming events within the next 3 minutes:");
+                upcomingEvents.forEach(event => {
+                    console.log( event.name +" - "+ event.dateTime );
+                });
+            } else {
+                console.log("No upcoming events within the next 30 minutes.");
+            }
+
+            
+        }, 5000); // Check every minute
+
         //event selector to detect if "pilih negeri" select box is change
         //if change, fetch and append the list of zones from zone.json (thx abam shahril) for the chosen state
         function changePilihNegeri()
@@ -576,11 +614,28 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                     //var asar = data["waktu_asar"];
                     //var maghrib = data["waktu_maghrib"];
                     //var isyak = data["waktu_isyak"];
-                console.log(data);
+
+                    if(!data.hasOwnProperty("data"))
+                    {
+                        alert("Event Added");
+                        data.forEach((obj, index) => {
+                            var date_add = obj["date"];
+                            //console.log(date_add);
+                            for (const key in obj) {
+                                if (key != "date" && key != "day" && key != "hijri")
+                                {
+                                addEvent(key + "_" + index, date_add + " " + obj[key]);
+                                }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        alert("No data available for the current request");
+                    }
                 })
                 .catch(error => {
                 console.error('Error:', error);
-                document.querySelector('.se-pre-con').style.display = 'none'; // hide loading in case of error
             });
         }
 
