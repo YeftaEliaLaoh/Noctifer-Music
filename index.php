@@ -543,6 +543,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         function addEvent(eventNameX, eventDateTime) {
             if(eventNameX && eventDateTime) {
                 events.push({ name: eventNameX, dateTime: new Date(eventDateTime) });
+                //play('Songs/Adzan.mp3', 1000); // Play 'beep.mp3' for 1 seconds
                 //console.log(events);
             }
         }
@@ -551,7 +552,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         setInterval(() => {
             var now = new Date();
             now -= now % 1000;
-            console.log("now: "+now);
+            console.log("now: "+now+" "+new Date(now) );
             //const rangeStartTime = new Date(now.getTime() - (30 * 60 * 1000)); // 3 minutes before now
             //const rangeEndTime = new Date(now.getTime() + (1 * 60 * 1000)); // 3 minutes after now
             //console.log("rangeStartTime: "+rangeStartTime);
@@ -559,11 +560,12 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
 
             const upcomingEvents = events.filter(event =>{
                 console.log(event);
-                event.dateTime.getTime() == now
+                console.log(event.name +" "+ event.dateTime.getTime());
+                event.dateTime.getTime() == now + - (20 * 60 * 1000)
             });
 
             if(upcomingEvents.length > 0) {
-                console.log("Upcoming events within the next 3 minutes:");
+                console.log("Upcoming events within the next fsw123 minutes:");
                 upcomingEvents.forEach(event => {
                     console.log( event.name +" - "+ event.dateTime );
                 });
@@ -573,6 +575,16 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
 
             
         }, 5000); // Check every minute
+
+
+        function play(audio_path, time_in_milisec) {
+            let beep = new Audio(audio_path);
+            beep.loop = true;
+            beep.play();
+            setTimeout(() => {
+                beep.pause();
+            }, time_in_milisec);
+        }
 
         //event selector to detect if "pilih negeri" select box is change
         //if change, fetch and append the list of zones from zone.json (thx abam shahril) for the chosen state
