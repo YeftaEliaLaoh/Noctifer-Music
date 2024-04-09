@@ -51,30 +51,32 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-// Close the connection
-$conn->close();
+if( isset( $_POST['password'] ) ) {
 
-    if( isset( $_POST['password'] ) ) {
+// Define your SQL query
+$sql = "SELECT * FROM users where password = '".$_POST['password']."';"; 
+// Execute the query
+$result = $conn->query($sql);
 
-    // Define your SQL query
-    $sql = "SELECT * FROM users where password = '".$_POST['password']."' "; 
-
-    // Execute the query
-    $result = $conn->query($sql);
-
-    // Check if there are any results
-    if ($result->num_rows > 0) {
-        // Output data for each row
-        while ($row = $result->fetch_assoc()) {
-            if (htmlspecialchars( $_POST['password'] )) {
-                $_SESSION['authenticated'] = 'yes';
-                header( "Location: {$_SERVER['HTTP_REFERER']}" );
-            } else {
-                loadPage('', 'Incorrect password', '');
-            }
+// Check if there are any results
+if ($result->num_rows > 0) {
+    // Output data for each row
+    while ($row = $result->fetch_assoc()) {
+        if (htmlspecialchars( $_POST['password'] )) {
+            $_SESSION['authenticated'] = 'yes';
+            header( "Location: {$_SERVER['HTTP_REFERER']}" );
+        } else {
+            loadPage('', 'Incorrect password', '');
         }
     }
-    
+}
+else
+{
+    loadPage('', 'Incorrect password', '');
+}
+ // Close the connection
+$conn->close();
+
 } elseif( isset( $_GET['play'] ) ) {
     ### playing the indicated song
     $song = sanitizeGet( $_GET['play'] );
@@ -166,6 +168,13 @@ PASSWORDREQUEST;
 
             # returning header
             echo '<div id="header">';
+            renderWaktu();
+            echo '</div>';
+            echo '<div id="header">';
+            renderForm();
+            echo '</div>';
+            echo '<div id="header">';
+
             renderButtons();
             echo '<div id="breadcrumbs">';
             $breadcrumbs = explode( '/', $basedir );
@@ -234,6 +243,12 @@ PASSWORDREQUEST;
 
         # returning header
         echo '<div id="header">';
+        renderWaktu();
+        echo '</div>';
+        echo '<div id="header">';
+        renderForm();
+        echo '</div>';
+        echo '<div id="header">';
         renderButtons();
         echo '<div id="playlisttitle">Playlist</div>';
         echo '</div>';
@@ -297,6 +312,29 @@ PLBUTTONS;
 BUTTONS;
 }
 
+function renderWaktu() {    
+    # rendering general buttons
+    echo <<<CHECKBOXWAKTU
+    <div id="playlisttitle">
+        <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" onclick="toggleDiv();">
+        <label for="vehicle1"> I have a bike</label><br>
+    </div>
+CHECKBOXWAKTU;
+}
+
+function renderForm() {    
+    # rendering general buttons
+    echo <<<FORMWAKTU
+    <div id="Create" style="display:none">
+    <select name='pilih_negeri' id='pilih_negeri' onchange="changePilihNegeri()">
+        <option value=''>Pilih Negeri</option>
+    </select>
+    <select id='pilih_zone' name='pilih_zone' onchange="changePilihZone()">
+        <option value=''>Pilih Zon</option>
+    </select>
+    </div>
+FORMWAKTU;
+}
 
 function getDirContents( $dir ) {
     global $excluded, $allowedextensions;
@@ -498,6 +536,54 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" id="viewport" />
 
     <script>
+        //event selector to detect if "pilih negeri" select box is change
+        //if change, fetch and append the list of zones from zone.json (thx abam shahril) for the chosen state
+        function changePilihNegeri()
+        {
+            document.getElementById("pilih_zone").innerHTML = "";
+
+            var negeri = document.getElementById("pilih_negeri").value;
+            // Use fetch API to fetch JSON data
+            fetch("./api/api.php?stateName=" + negeri)
+            .then(response => response.json())
+            .then(data => {
+                var zonelist = "";
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        zonelist += "<option value='" + key + "'>" + data[key] + "</option>";
+                    }
+                }
+
+                var textpilih = "<option value=''>Pilih Zon</option>";
+                document.getElementById("pilih_zone").innerHTML = textpilih + zonelist; //append list
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function changePilihZone()
+        {
+            var codeZon = document.getElementById("pilih_zone").value;
+            var apiURL = "./api/api.php?zon=" + codeZon; //my JSON API
+                fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    //var imsak = data["waktu_imsak"];
+                    //var subuh = data["waktu_subuh"];
+                    //var syuruk = data["waktu_syuruk"];
+                    //var zohor = data["waktu_zohor"];
+                    //var asar = data["waktu_asar"];
+                    //var maghrib = data["waktu_maghrib"];
+                    //var isyak = data["waktu_isyak"];
+                console.log(data);
+                })
+                .catch(error => {
+                console.error('Error:', error);
+                document.querySelector('.se-pre-con').style.display = 'none'; // hide loading in case of error
+            });
+        }
+
         function goToDir(dir) {
             setCookie('nm_viewmode', 'browse', 7);
 
@@ -510,6 +596,32 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
             }
             xmlhttp.open('GET', '?dir=' + dir, true);
             xmlhttp.send();
+        };
+
+        function toggleDiv() {
+            var x = document.getElementById('Create');
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+            const pilih_negeri = document.getElementById("pilih_negeri");
+
+            fetch("./api/api.php?getStates")
+            .then(response => response.json())
+            .then(data => {
+                var stateslist = "";
+                for (const key in data) {
+                    const option = document.createElement('option');
+                    option.value = data[key];
+                    option.innerHTML = data[key];
+                    pilih_negeri.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
         };
 
         function goToPlaylist(playlist) {
@@ -987,12 +1099,16 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                     width: {$width};
                     margin: 0 auto 10px auto; }
 
-                #playlisttitle, #breadcrumbs, #passwordrequest {
+                #playlisttitle, #breadcrumbs, #passwordrequest, #Create {
                         font-size: medium;
                         margin-top: 10px;
                         flex-grow: 1;
                         color: #333;
                         background-color: {$menubg}; }
+
+                    #Create {
+                        font-weight: bold;
+                        padding: 10px; }
 
                     #playlisttitle {
                             font-weight: bold;
