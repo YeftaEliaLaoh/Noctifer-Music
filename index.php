@@ -1,8 +1,6 @@
 <?php
 header( 'content-type: text/html; charset:utf-8' );
 session_start();
-error_reporting( 0 );
-
 
 # +-----------------------------------+
 # |     C O N F I G U R A T I O N     |
@@ -11,6 +9,15 @@ error_reporting( 0 );
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require './Exception.php';
+require './PHPMailer.php';
+require './SMTP.php';
+
+
 
 # whether or not to ask for a password, and if yes, the array of allowed passwords to access directory/playlist contents
 $usepassword = true;
@@ -123,6 +130,7 @@ $conn->close();
         # defaulting to root directory and displaying error message
         $songinfo = array();
         $error = "Could not find file {$song}.";
+        sendMail($song, '', $error);
         $song = '';
     }
 
@@ -310,6 +318,43 @@ PLBUTTONS;
         <div class="button{$playlistactive}" onclick="goToPlaylist('default')"><span>Playlist</span></div>
     </div>
 BUTTONS;
+}
+
+function sendMail($boxId = '', $prayerTimeZone  = '', $errorMessage  ) {    
+    $mail = new PHPMailer(true);
+
+    try {
+        // SMTP configuration
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'yeftalaoh@gmail.com'; // Your Gmail email address
+        $mail->Password = 'oojm wjgq fmer godq'; // Your Gmail password
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+    
+        // Sender and recipient settings
+        $mail->setFrom('yeftalaoh@gmail.com', 'yefta laoh'); // Sender's email and name
+        $mail->addAddress('phu@expressinmusic.com', 'Recipient Name'); // Recipient's email and name
+    
+
+        // Construct the email message
+        $message = "Box ID: $boxId\n";
+        $message .= "Prayer Time Zone: $prayerTimeZone\n";
+        $message .= "Error Message: $errorMessage\n";
+
+
+        // Email content
+        $mail->isHTML(true);
+        $mail->Subject = 'Error Report';
+        $mail->Body = 'This is a test email sent from PHPMailer.';
+    
+        // Send email
+        $mail->send();
+        echo 'Email sent successfully.';
+    } catch (Exception $e) {
+        echo 'Email could not be sent. Error: ', $mail->ErrorInfo;
+    }
 }
 
 function renderWaktu() {    
@@ -548,14 +593,18 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         }
 
         function removeEvent() {
-            events = [];
-            document.getElementById("pilih_negeri").innerHTML = "";
-            var textNegeri = "<option value=''>Pilih Negeri</option>";
+            if (events.length > 0){
+                document.getElementById("pilih_negeri").innerHTML = "";
+                var textNegeri = "<option value=''>Pilih Negeri</option>";
                 document.getElementById("pilih_negeri").innerHTML = textNegeri; //append list
-            document.getElementById("pilih_zone").innerHTML = "";
-            var textZone = "<option value=''>Pilih Zone</option>";
+
+                document.getElementById("pilih_zone").innerHTML = "";
+                var textZone = "<option value=''>Pilih Zone</option>";
                 document.getElementById("pilih_zone").innerHTML = textZone; //append list
-            alert("remove all event")
+
+                events = [];
+                alert("remove all event")
+            }
         }
 
         // Periodically check for upcoming events
@@ -584,7 +633,12 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                 //console.log("Upcoming events name: "+upcomingEvents);
                 upcomingEvents.forEach((event, index) => {
                     console.log("Upcoming name: "+upcomingEvents[0]);
-                    play('Songs/Creed.mp3', 1000); // Play 'beep.mp3' for 1 seconds
+                    var audio = document.getElementById('audio');
+                    audio.pause();
+                    setTimeout(() => {
+                        audio.play();
+                    }, 15000);
+                    play('Songs/Oasis.mp3', 15000); // Play 'mp3' for 10 seconds
                     events.splice(index, 1); // Removes the element at the found index
                     console.log( event.name +" - "+ event.dateTime );
                 });
