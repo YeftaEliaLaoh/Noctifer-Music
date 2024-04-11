@@ -81,22 +81,46 @@ else if(isset($_GET['zon']))
 }
 else
 {
-	?>
-	<p>
-		Waktu Solat API created by Afif Zafri <br>
-		XML data are fetch directly from JAKIM e-solat website <br>
-		This API will parse the XML and return the data as JSON <br><br>
 
-		<b>To get list of states</b><br>
-		http://localhost/<font color="blue">api.php?getStates</font><br><br>
+	$json = file_get_contents('php://input');
+	$array = array();
+	// Decode the JSON data
+	$requestData = json_decode($json, true);
+	
+	$serverDB = "localhost";
+	$usernameDB = "root";
+	$passwordDB = "";
+	$nameDB = "usea";
 
-		<b>To get list of zones of a state</b><br>
-		http://localhost/<font color="blue">api.php?stateName=</font><font color="red">PERLIS</font> , where "<font color="red">PERLIS</font>" is the state name<br><br>
+	// Create connection
+	$conn = new mysqli($serverDB, $usernameDB, $passwordDB, $nameDB);
 
-		<b>To get the prayer time of a zone</b><br>
-		http://localhost/<font color="blue">api.php?zon=</font><font color="red">PLS01</font> , where "<font color="red">PLS01</font>" is the zone code <br><br>
-	</p>
-	<?php
+	// Check connection
+	if ($conn->connect_error) {
+		die("Connection failed: " . $conn->connect_error);
+	}
+
+	// Access the data
+	$user_id = $requestData['add']['user_id'];
+	$code_zone = $requestData['add']['code_zone'];
+	$prayer_name = $requestData['add']['prayer_name'];
+	$prayer_time = $requestData['add']['prayer_time'];
+
+	$sql_prayer_times = "INSERT INTO prayer_times (user_id, code_zone, prayer_name, prayer_time) VALUES ('$user_id', '$code_zone', '$prayer_name', '$prayer_time')";
+
+	// Execute the INSERT statement for prayer times using PHP
+	if ($conn->query($sql_prayer_times) === TRUE) {
+		$array = array(
+			"message" => "Success"
+		);
+	} else {
+		$array = array(
+			"message" => "Failed");
+	}
+	// Close connection
+	$conn->close();
+	echo json_encode ($array);
+	
 }
 
 // Function to convert the time

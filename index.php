@@ -50,6 +50,8 @@ $usernameDB = "root";
 $passwordDB = "";
 $nameDB = "usea";
 
+$user_id = 0;
+
 // Create connection
 $conn = new mysqli($serverDB, $usernameDB, $passwordDB, $nameDB);
 
@@ -67,8 +69,11 @@ $result = $conn->query($sql);
 
 // Check if there are any results
 if ($result->num_rows > 0) {
+
     // Output data for each row
     while ($row = $result->fetch_assoc()) {
+        $user_id = $row['id'];
+
         if (htmlspecialchars( $_POST['password'] )) {
             $_SESSION['authenticated'] = 'yes';
             header( "Location: {$_SERVER['HTTP_REFERER']}" );
@@ -131,6 +136,7 @@ $conn->close();
         $songinfo = array();
         $error = "Could not find file {$song}.";
         sendMail($song, '', $error);
+        errorLog($song, '', $error);
         $song = '';
     }
 
@@ -318,6 +324,29 @@ PLBUTTONS;
         <div class="button{$playlistactive}" onclick="goToPlaylist('default')"><span>Playlist</span></div>
     </div>
 BUTTONS;
+}
+
+function errorLog($boxId = '', $prayerTimeZone  = '', $errorMessage  ) {    
+    // Create connection
+    $conn = new mysqli($serverDB, $usernameDB, $passwordDB, $nameDB);
+    
+    // Check connection
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    
+    
+    $sql_log_error = "INSERT INTO errors (user_id, error_message) VALUES ('$user_id', '$error_message')";
+    
+    // Execute the INSERT statement for logging errors using PHP
+    if ($conn->query($sql_log_error) === TRUE) {
+        echo "Error logged successfully";
+    } else {
+        echo "Error: " . $sql_log_error . "<br>" . $conn->error;
+    }
+    
+    $conn->close();
+    
 }
 
 function sendMail($boxId = '', $prayerTimeZone  = '', $errorMessage  ) {    
@@ -585,10 +614,45 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         let events = [];
 
         // Function to add event
-        function addEvent(eventNameX, eventDateTime) {
+        function addEvent(codeZone, eventNameX, eventDateTime) {
             if(eventNameX && eventDateTime) {
                 events.push({ name: eventNameX, dateTime: new Date(eventDateTime) });
                 //console.log(events);
+                var apiURL = "./api.php"; //my JSON API
+
+                // Define the data to be sent in the request body                
+                var data = {
+                    user_id: 1,
+                    code_zone: codeZone,
+                    prayer_name: eventNameX,
+                    prayer_time: eventDateTime
+                };
+
+                var add  = {add: data } ;
+
+                // Define options for the fetch request
+                const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(add)
+                };
+
+                // Make the POST request
+                fetch(apiURL, options)
+                .then(response => {
+                    if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                    }
+                    return response.json(); // Parse response body as JSON
+                })
+                .then(data => {
+                    console.log('Response from server:', data);
+                })
+                .catch(error => {
+                    console.error('There was a problem with the POST request:', error);
+                });
             }
         }
 
@@ -638,7 +702,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                     setTimeout(() => {
                         audio.play();
                     }, 15000);
-                    play('Songs/Oasis.mp3', 15000); // Play 'mp3' for 10 seconds
+                    play('Songs/Adzan.mp3', 15000); // Play 'mp3' for 15 seconds
                     events.splice(index, 1); // Removes the element at the found index
                     console.log( event.name +" - "+ event.dateTime );
                 });
@@ -686,8 +750,8 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
 
         function changePilihZone()
         {
-            var codeZon = document.getElementById("pilih_zone").value;
-            var apiURL = "./api.php?zon=" + codeZon; //my JSON API
+            var codeZone = document.getElementById("pilih_zone").value;
+            var apiURL = "./api.php?zon=" + codeZone; //my JSON API
                 fetch(apiURL)
                 .then(response => response.json())
                 .then(data => {
@@ -708,7 +772,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
                             for (const key in obj) {
                                 if (key != "date" && key != "day" && key != "hijri")
                                 {
-                                addEvent(key + "_" + index, date_add + " " + obj[key]);
+                                addEvent(codeZone, key + "_" + index, date_add + " " + obj[key]);
                                 }
                             }
                         });
