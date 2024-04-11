@@ -317,7 +317,7 @@ function renderWaktu() {
     echo <<<CHECKBOXWAKTU
     <div id="playlisttitle">
         <input type="checkbox" id="isP" onclick="toggleDiv();">
-        <label for="isP"> Create schdule for prayer time</label><br>
+        <label for="isP"> Prayer time enable?</label><br>
     </div>
 CHECKBOXWAKTU;
 }
@@ -543,36 +543,54 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         function addEvent(eventNameX, eventDateTime) {
             if(eventNameX && eventDateTime) {
                 events.push({ name: eventNameX, dateTime: new Date(eventDateTime) });
-                //play('Songs/Adzan.mp3', 1000); // Play 'beep.mp3' for 1 seconds
                 //console.log(events);
             }
         }
 
+        function removeEvent() {
+            events = [];
+            document.getElementById("pilih_negeri").innerHTML = "";
+            var textNegeri = "<option value=''>Pilih Negeri</option>";
+                document.getElementById("pilih_negeri").innerHTML = textNegeri; //append list
+            document.getElementById("pilih_zone").innerHTML = "";
+            var textZone = "<option value=''>Pilih Zone</option>";
+                document.getElementById("pilih_zone").innerHTML = textZone; //append list
+            alert("remove all event")
+        }
+
         // Periodically check for upcoming events
         setInterval(() => {
+            // Get current timestamp
             var now = new Date();
-            now -= now % 1000;
-            console.log("now: "+now+" "+new Date(now) );
+            now.setMinutes(40);
+            now.setHours(05);
+
+            // Set miliseconds and seconds component to 0
+            now.setMilliseconds(0);
+            now.setSeconds(0);
+
+            console.log("Timestamp with seconds removed: ", now, now.getTime());
             //const rangeStartTime = new Date(now.getTime() - (30 * 60 * 1000)); // 3 minutes before now
             //const rangeEndTime = new Date(now.getTime() + (1 * 60 * 1000)); // 3 minutes after now
             //console.log("rangeStartTime: "+rangeStartTime);
             //console.log("rangeEndTime: "+rangeEndTime);
 
-            const upcomingEvents = events.filter(event =>{
-                console.log(event);
-                console.log(event.name +" "+ event.dateTime.getTime());
-                event.dateTime.getTime() == now + - (20 * 60 * 1000)
-            });
-
+            const upcomingEvents = events.filter(event =>
+                event.dateTime.getTime() == now.getTime()
+            );
+            
             if(upcomingEvents.length > 0) {
-                console.log("Upcoming events within the next fsw123 minutes:");
-                upcomingEvents.forEach(event => {
+                event = [];
+                //console.log("Upcoming events name: "+upcomingEvents);
+                upcomingEvents.forEach((event, index) => {
+                    console.log("Upcoming name: "+upcomingEvents[0]);
+                    play('Songs/Creed.mp3', 1000); // Play 'beep.mp3' for 1 seconds
+                    events.splice(index, 1); // Removes the element at the found index
                     console.log( event.name +" - "+ event.dateTime );
                 });
             } else {
-                console.log("No upcoming events within the next 30 minutes.");
+                console.log("No upcoming events");
             }
-
             
         }, 5000); // Check every minute
 
@@ -594,7 +612,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
 
             var negeri = document.getElementById("pilih_negeri").value;
             // Use fetch API to fetch JSON data
-            fetch("./api/api.php?stateName=" + negeri)
+            fetch("./api.php?stateName=" + negeri)
             .then(response => response.json())
             .then(data => {
                 var zonelist = "";
@@ -615,7 +633,7 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         function changePilihZone()
         {
             var codeZon = document.getElementById("pilih_zone").value;
-            var apiURL = "./api/api.php?zon=" + codeZon; //my JSON API
+            var apiURL = "./api.php?zon=" + codeZon; //my JSON API
                 fetch(apiURL)
                 .then(response => response.json())
                 .then(data => {
@@ -669,12 +687,9 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
             var x = document.getElementById('Create');
             if (x.style.display === "none") {
                 x.style.display = "block";
-            } else {
-                x.style.display = "none";
-            }
-            const pilih_negeri = document.getElementById("pilih_negeri");
 
-            fetch("./api/api.php?getStates")
+            const pilih_negeri = document.getElementById("pilih_negeri");
+            fetch("./api.php?getStates")
             .then(response => response.json())
             .then(data => {
                 var stateslist = "";
@@ -688,6 +703,11 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
             .catch(error => {
                 console.error('Error:', error);
             });
+
+            } else {
+                removeEvent();
+                x.style.display = "none";
+            }
 
         };
 
