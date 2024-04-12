@@ -675,8 +675,8 @@ function loadPage( $song = '', $error = '', $songinfo = array() ) {
         setInterval(() => {
             // Get current timestamp
             var now = new Date();
-            now.setMinutes(40);
-            now.setHours(05);
+            //now.setMinutes(40);
+            //now.setHours(05);
 
             // Set miliseconds and seconds component to 0
             now.setMilliseconds(0);
